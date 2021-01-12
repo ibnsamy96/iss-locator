@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISS Locator</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin="" />
+    <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="manifest" href="favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff"> <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #earthMap {
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id='earthMap'></div>
+    <script>
+        // calculating map tiles zoom level
+        const documentHeight = window.innerHeight
+        const zoomLevel = Math.ceil(Math.log((documentHeight / 256)) / Math.log(2))
+        // create the map & tiles
+        const earthMap = L.map('earthMap', {
+            maxBounds: [
+                [-90, -180],
+                [90, 180]
+            ],
+            minZoom: zoomLevel,
+            maxZoom: zoomLevel + 5
+        }).setView([0, 0], zoomLevel);
+        const tilesURL = `https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png`
+        const attribution = 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.'
+        L.tileLayer(tilesURL, {
+            attribution,
+        }).addTo(earthMap);
+        const icon = L.icon({
+            iconUrl: 'spaceShip.gif',
+            iconSize: [80, 80],
+            iconAnchor: [25, 23.15]
+        });
+        let marker;
+        // data retrieving
+        const apiURL = 'https://api.wheretheiss.at/v1/satellites/25544'
+        async function getISSLocation() {
+            const response = await fetch(apiURL)
+            const responseJSON = await response.json()
+            return responseJSON
+        }
+        setInterval(() => {
+            getISSLocation().then((data) => {
+                if (marker) {
+                    marker.setLatLng([data.latitude, data.longitude])
+                } else {
+                    marker = L.marker([data.latitude, data.longitude], {
+                        icon: icon,
+                        autoPan: true
+                    }).addTo(earthMap);
+                }
+                console.log(marker.getLatLng());
+            })
+        }, 2000);
+    </script>
+</body>
+
+</html>
